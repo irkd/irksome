@@ -1,0 +1,10 @@
+[package]
+name = "irksome"
+version = "0.0.1"
+authors = ["Barret Rennie <barret@brennie.ca>"]
+license = "MIT"
+
+[badges]
+travis-ci = { repository = "irkd/irksome" }
+
+[dependencies]
