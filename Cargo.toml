@@ -1,10 +1,13 @@
 [package]
-name = "irksome"
-version = "0.0.1"
 authors = ["Barret Rennie <barret@brennie.ca>"]
 license = "MIT"
+name = "irksome"
+version = "0.0.1"
 
 [badges]
-circle-ci = { repository = "irkd/irksome" }
+
+[badges.circle-ci]
+repository = "irkd/irksome"
 
 [dependencies]
+combine = "3.0.0-alpha.5"
