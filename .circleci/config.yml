@@ -1,4 +1,5 @@
 version: 2
+
 jobs:
   build:
     docker:
@@ -12,6 +13,13 @@ jobs:
       - run:
           name: Test
           command: cargo test --verbose
+      - run:
+          name: Build documentation
+          command: cargo doc
+      - persist_to_workspace:
+          root: .
+          paths:
+            - target/doc/
 
   lint:
     docker:
@@ -41,16 +49,21 @@ jobs:
 
   deploy:
     docker:
-      - image: liuchong/rustup:nightly
+      - image: debian:jessie-slim
+    working_directory: ~/src/
     steps:
-      - checkout
       - run:
-          name: Build documentation
-          command: cargo doc
-      - run:
-          name: Generate index
+          name: Install packages
           command: |
-            cat >/target/doc/index.html <<EOF
+            apt-get update
+            apt-get install -y ca-certificates git ssh
+      - checkout
+      - attach-workspace:
+          at: .
+      - run:
+          name: Generate documentation index
+          command: |
+            cat >target/doc/index.html <<EOF
             <!doctype html>
             <html>
             <head>
@@ -60,14 +73,19 @@ jobs:
             EOF
       - add_ssh_keys:
           fingerprints:
-            - "f5:a4:55:b0:90:15:86:9a:6d:62:00:53:8c:5f:df:2b"
+            - "c1:92:32:06:af:77:ec:4a:16:4f:46:83:d2:59:d5:49"
+      - run:
+          name: Configure Git
+          command: |
+            git config --global user.email deploy@brennie.ca
+            git config --global user.name "Circle CI"
       - deploy:
           name: Push to gh-pages
           command: |
             git add -f target/doc
-            git commit -m "Build documentation for ${CIRCLE_SHA1}"
-            git subtree push --prefix=target/doc origin gh-pages
-
+            git commit -m  "Build documentation for ${CIRCLE_SHA1}"
+            git subtree split --prefix=target/doc -b gh-pages
+            git push -f origin gh-pages:gh-pages
 
 workflows:
   version: 2
