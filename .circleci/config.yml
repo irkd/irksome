@@ -1,0 +1,85 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: liuchong/rustup:nightly
+    working_directory: ~/src/
+    steps:
+      - checkout
+      - run:
+          name: Compile
+          command: cargo build --verbose
+      - run:
+          name: Test
+          command: cargo test --verbose
+
+  lint:
+    docker:
+      - image: liuchong/rustup:nightly
+    environment:
+      RUST_VERSION: nightly-2018-01-12
+      CLIPPY_VERSION: 0.0.179
+    working_directory: ~/src/
+    steps:
+      - checkout
+      - run:
+          name: Install rust, clippy, and rustfmt
+          command: |
+            rustup toolchain install "${RUST_VERSION}"
+            rustup default "${RUST_VERSION}"
+            rustup component add rustfmt-preview
+            cargo install clippy --version "${CLIPPY_VERSION}"
+
+      - run:
+          name: rustfmt
+          command: cargo fmt -- --write-mode=diff
+
+      - run:
+          name: clippy
+          when: always
+          command: cargo clippy -- -D clippy
+
+  deploy:
+    docker:
+      - image: liuchong/rustup:nightly
+    steps:
+      - checkout
+      - run:
+          name: Build documentation
+          command: cargo doc
+      - run:
+          name: Generate index
+          command: |
+            cat >/target/doc/index.html <<EOF
+            <!doctype html>
+            <html>
+            <head>
+            <meta http-equiv="refresh" content="0; url=https://irkd.github.io/irksome/irksome/index.html">
+            </head>
+            </html>
+            EOF
+      - add_ssh_keys:
+          fingerprints:
+            - "f5:a4:55:b0:90:15:86:9a:6d:62:00:53:8c:5f:df:2b"
+      - deploy:
+          name: Push to gh-pages
+          command: |
+            git add -f target/doc
+            git commit -m "Build documentation for ${CIRCLE_SHA1}"
+            git subtree push --prefix=target/doc origin gh-pages
+
+
+workflows:
+  version: 2
+  build_all:
+    jobs:
+      - build
+      - lint
+      - deploy:
+          requires:
+            - build
+            - lint
+          filters:
+            branches:
+              only:
+                - master
