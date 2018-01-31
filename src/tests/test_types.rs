@@ -1,4 +1,4 @@
-use Source;
+use types::Source;
 
 #[test]
 fn test_display_source() {
