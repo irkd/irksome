@@ -5,7 +5,7 @@ use combine::byte::*;
 use combine::primitives::RangeStream;
 use combine::range::*;
 
-use types::Source;
+use types::*;
 
 /// Whether or not a character is valid for a nickname when it is not the first character.
 fn is_nick_trailing_char(c: u8) -> bool {
@@ -80,6 +80,34 @@ where
         host().map(|host| {
             let host = unsafe { str::from_utf8_unchecked(host) };
             Source::Server { host: host.into() }
+        })
+    )
+}
+
+fn is_command_char(c: u8) -> bool {
+    match c {
+        b'a'...b'z' | b'A'...b'Z' => true,
+        _ => false,
+    }
+}
+
+pub fn message_kind<'a, I>() -> impl Parser<Input = I, Output = MessageKind>
+where
+    I: RangeStream<Item = u8, Range = &'a [u8]>,
+    I::Error: ParseError<u8, &'a [u8], I::Position>,
+{
+    let numeric = || recognize((digit(), digit(), digit()));
+    let command = || take_while1(is_command_char);
+
+    choice!(
+        numeric().map(|bs| {
+            let s = unsafe { str::from_utf8_unchecked(bs) };
+            let n = s.parse().unwrap();
+            MessageKind::Numeric(n)
+        }),
+        command().map(|bs| {
+            let s = unsafe { str::from_utf8_unchecked(bs) };
+            MessageKind::Command(s.into())
         })
     )
 }
