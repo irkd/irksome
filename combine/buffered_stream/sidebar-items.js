@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["BufferedStream",""],["BufferedStreamRef","A `BufferedStreamRef` wraps an instance `StreamOnce`, allowing it to be used as a `Stream`."]]});

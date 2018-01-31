@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["MessageKind","The kind of a message."],["Source","A message source."]]});
