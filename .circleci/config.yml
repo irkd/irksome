@@ -82,6 +82,8 @@ jobs:
       - deploy:
           name: Push to gh-pages
           command: |
+            mkdir -p target/doc/.circleci
+            cp .circleci/config.yml target/doc/.circleci/config.yml
             git add -f target/doc
             git commit -m  "Build documentation for ${CIRCLE_SHA1}"
             git subtree split --prefix=target/doc -b gh-pages
@@ -89,10 +91,20 @@ jobs:
 
 workflows:
   version: 2
-  build_all:
+  build-lint-deploy:
     jobs:
-      - build
-      - lint
+      - build:
+          filters:
+            branches:
+              ignore:
+                - gh-pages
+
+      - lint:
+          filters:
+            branches:
+              ignore:
+                - gh-pages
+
       - deploy:
           requires:
             - build
